@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "CustomSavingSubsystem",
+	"Description": "This is a subsystem for wrapping saving and loading information",
+	"Category": "Other",
+	"CreatedBy": "Bryson Van Wie",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "CustomSavingSubsystem",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
