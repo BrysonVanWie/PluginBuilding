@@ -6,6 +6,9 @@
 #include "GameFramework/SaveGame.h"
 #include "SaveData.generated.h"
 
+/// <summary>
+/// FOR MORE INFORMATION SEE SAVE SUBSYSTEM 
+/// </summary>
 USTRUCT()
 struct FSavedData
 {

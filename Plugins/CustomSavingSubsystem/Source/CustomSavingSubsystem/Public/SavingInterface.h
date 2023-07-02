@@ -7,7 +7,7 @@
 #include "SavingInterface.generated.h"
 
 // This class does not need to be modified.
-UINTERFACE(MinimalAPI)
+UINTERFACE(MinimalAPI, BlueprintType)
 class USavingInterface : public UInterface
 {
 	GENERATED_BODY()
@@ -25,14 +25,14 @@ public:
 
 	//this should return a unique save name to use when saving
 	UFUNCTION(BlueprintNativeEvent, Category = "Saving and Loading")
-		FString GetUniqueSaveName();
-
+	FString GetUniqueSaveName();
 	//called right before the owning actor is saved.
 	//usually used to save last minute variables e.g. player positions
 	UFUNCTION(BlueprintNativeEvent, Category = "Saving and Loading")
-		FString OnBeforeSave();
+	void OnBeforeSave();
+
 
 	//called when an objects data has been loaded.
-	UFUNCTION(BlueprintNativeEvent, Category = "SaveInterface")
-		void OnLoadedData();
+	UFUNCTION(BlueprintNativeEvent, Category = "Saving and Loading")
+	void OnLoadedData();
 };

@@ -26,6 +26,7 @@ public class Inventory : ModuleRules
 			new string[]
 			{
 				"Core",
+                "CustomSavingSubsystem",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -38,6 +39,7 @@ public class Inventory : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+                "CustomSavingSubsystem",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

@@ -2,6 +2,7 @@
 
 
 #include "InventorySubsystem.h"
+#include "Kismet/KismetMathLibrary.h"
 
 void UInventorySubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -49,3 +50,51 @@ TMap<uint8, int32> UInventorySubsystem::GetPlayerInventory()
 {
 	return PlayerInventory;
 }
+FString UInventorySubsystem::GetInventoryAsString()
+{
+	FString Out;
+	for (auto &Item : PlayerInventory)
+	{
+		//format is ItemByteValue-Number,
+		//NOTE:: bytes to string adds +1 to the byte value
+		int32 KeyInt;
+		KeyInt = UKismetMathLibrary::Conv_ByteToInt(Item.Key);
+		Out = Out + FString::FromInt(KeyInt)+ "-" + *FString::FromInt(Item.Value) + ",\n";
+
+	}
+	return Out;
+}
+TMap<uint8, int32> UInventorySubsystem::GetInventoryFromString(const FString &InString)
+{
+	TMap<uint8, int32> Out;
+	//TArray<FS
+	//for (const FString Char : InString.ParseIntoArrayLines())
+	//{
+	//	FString
+	//	TCHAR::
+	//	if (GEngine)
+	//		GEngine->AddOnScreenDebugMessage(-1, 5.0, FColor::Orange, TEXT(Char.));
+	//}
+	return Out;
+}
+#pragma region Saving and Loading
+
+
+FString UInventorySubsystem::GetUniqueSaveName_Implementation()
+{
+	return "Inventory Subsystem";
+}
+
+void UInventorySubsystem::OnBeforeSave_Implementation()
+{
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 5.0, FColor::Orange, "Inventory on save" + GetInventoryAsString());
+}
+
+void UInventorySubsystem::OnLoadedData_Implementation()
+{
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 5.0, FColor::Orange, "Inventory subsystem loaded " + GetInventoryAsString());
+}
+
+#pragma endregion

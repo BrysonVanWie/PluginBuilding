@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+#include "SavingSubsystem.h"
 #include "InventorySubsystem.generated.h"
 
 /**
@@ -16,14 +17,13 @@ USTRUCT(BlueprintType)
 struct FItemInfo
 {
 	GENERATED_BODY()
-
 		UPROPERTY(BlueprintReadWrite, Category = "Inventory Subsystem")
 		FString ItemName;
 };
 
 
-UCLASS()
-class INVENTORY_API UInventorySubsystem : public UGameInstanceSubsystem
+UCLASS(BlueprintType)
+class INVENTORY_API UInventorySubsystem : public UGameInstanceSubsystem, public ISavingInterface
 {
 	GENERATED_BODY()
 	
@@ -31,7 +31,7 @@ public: // properties
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Category = "Inventory Subsystem")
 		FOnInventoryChangedDelegate OnInventoryChanged;
 
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Inventory Subsystem")
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Inventory Subsystem", SaveGame)
 	TMap<uint8, int32> PlayerInventory;
 public: //functions
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
@@ -46,4 +46,16 @@ public: //functions
 	bool AddManyItems(TMap<uint8,int32> InItems);
 	UFUNCTION(BlueprintCallable, Category = "Inventory Subsystem")
 	TMap<uint8, int32> GetPlayerInventory();
+
+	//this will return your current inventory as a string, however it will not be a very readable string
+	UFUNCTION(BlueprintPure, Category = "Inventory Subsystem")
+	FString GetInventoryAsString();
+	UFUNCTION(BlueprintPure, Category = "Inventory Subsystem")
+	TMap<uint8, int32> GetInventoryFromString(const FString& InString);
+
+#pragma region Saving and Loading
+	virtual FString GetUniqueSaveName_Implementation() override;
+	virtual void OnBeforeSave_Implementation() override;
+	virtual void OnLoadedData_Implementation() override;
+#pragma endregion
 };

@@ -7,10 +7,20 @@
 #include "SavingInterface.h"
 #include "SaveData.h"
 #include "SaveGameMetadata.h"
+#include "Stats/Stats.h"
+#include "Kismet/BlueprintAsyncActionBase.h"
 #include "SavingSubsystem.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSaveCompleteDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLoadCompleteDelegate);
 /**
+ *  This is a pretty big manager class that handles saving
+ * to reduce the amounnt of header comments on classes i plan to save what everything does here
+ *	- SaveGameMetadata
+ *		- This stores data about save files (File name, Date saved, ect.)
+ *		- We create one save metadata save file to store this information to the disk.
+ *  -  SaveData
+ *		- this is the save game object that stores every saving objects game data
  * 
  */
 UCLASS()
@@ -20,17 +30,20 @@ class CUSTOMSAVINGSUBSYSTEM_API USavingSubsystem : public UGameInstanceSubsystem
 
 private: //properties
 	TArray<TScriptInterface<ISavingInterface>> SaveInterfaces;
-	const FString AutosaveSlotName;
-	const FString MetadataSaveSlot;
+	const FString AutosaveSlotName = "Autosaves";
+	const FString MetadataSaveSlot = "SaveGamesMetadata";
+	TArray<FSaveMetadata> SaveMetadataCache;
 
 public: // properties
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Saving and Loading")
-	FString CurrentSaveSlotName;
+	FString CurrentSaveSlotName = "Default";
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Saving and Loading")
 	int32 UserIndex;
 
 	UPROPERTY(BlueprintAssignable, Category = "Saving and Loading")
 	FOnSaveCompleteDelegate OnSaveComplete;
+	UPROPERTY(BlueprintAssignable, Category = "Saving and Loading")
+	FOnLoadCompleteDelegate OnLoadComplete;
 
 
 public: //functions
@@ -48,6 +61,9 @@ public: //functions
 	void LoadGame(FString SlotName = "Current");
 
 	UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
+	void DeleteSlot(FString SlotName = "Current");
+
+	UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
 	void SetCurrentSaveSlot(FString Slot);
 	UFUNCTION(BlueprintPure, Category = "Saving and Loading")
 	bool GetNewSaveName(FString & NewSaveName);
@@ -57,8 +73,41 @@ public: //functions
 
 	UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
 	TArray<uint8> MakeSaveThumbnail();
+
+	UFUNCTION(BlueprintPure, Category = "Saving and Loading")
+	TArray<FSaveMetadata> GetAllSaveMetadata();
 	//UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
 	//UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
 	//UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
 
+private: // functions
+	TArray<FSaveMetadata> GetAllSaveMetadataFromMap(const TMap<FString, FSaveMetadata>& InMetadata);
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAsyncSavingTaskFinished);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAsyncSavedObject, FString, SavedObjectName);
+UCLASS()
+class CUSTOMSAVINGSUBSYSTEM_API UAsyncSavingTask : public UBlueprintAsyncActionBase
+{
+	GENERATED_BODY()
+public:
+
+	UPROPERTY(BlueprintAssignable)
+	FOnAsyncSavingTaskFinished SaveFinished;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnAsyncSavedObject SavedObject;
+	
+	UFUNCTION(BlueprintCallable, meta = (BlueprintInternalUseOnly = "true", WorldContext = "WorldContextObject"), Category = "Saving and Loading")
+	static UAsyncSavingTask* AsyncSaveGame(const UObject* WorldContextObject, FString SlotName = "Current");
+
+	// UBlueprintAsyncActionBase interface
+	virtual void Activate() override;
+	//~UBlueprintAsyncActionBase interface
+
+private:
+	FString SaveSlotName;
+	const UObject* WorldContextObject;
+	bool Active;
+	/*...*/
 };
