@@ -1,0 +1,34 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "NewModularQuestSystem",
+	"Description": "",
+	"Category": "Other",
+	"CreatedBy": "Bryson Van Wie",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "NewModularQuestSystem",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "CustomSavingSubsystem",
+			"Enabled": true
+		},
+		{
+			"Name": "GenericGraph",
+			"Enabled": true
+		}
+	]
+}

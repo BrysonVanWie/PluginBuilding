@@ -26,6 +26,7 @@ public:
 	//this should return a unique save name to use when saving
 	UFUNCTION(BlueprintNativeEvent, Category = "Saving and Loading")
 	FString GetUniqueSaveName();
+
 	//called right before the owning actor is saved.
 	//usually used to save last minute variables e.g. player positions
 	UFUNCTION(BlueprintNativeEvent, Category = "Saving and Loading")

@@ -9,10 +9,14 @@
 #include "SaveGameMetadata.h"
 #include "Stats/Stats.h"
 #include "Kismet/BlueprintAsyncActionBase.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Engine/TextureRenderTarget2D.h"
 #include "SavingSubsystem.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSaveCompleteDelegate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLoadCompleteDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSaveCompleteDelegate, FString, SlotSavedName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLoadCompleteDelegate, FString, SlotLoadedName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSlotDeleted, FString, SlotDeletedName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSaveSlotsChanged);
 /**
  *  This is a pretty big manager class that handles saving
  * to reduce the amounnt of header comments on classes i plan to save what everything does here
@@ -35,15 +39,28 @@ private: //properties
 	TArray<FSaveMetadata> SaveMetadataCache;
 
 public: // properties
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Saving and Loading")
-	FString CurrentSaveSlotName = "Default";
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Saving and Loading")
-	int32 UserIndex;
-
 	UPROPERTY(BlueprintAssignable, Category = "Saving and Loading")
 	FOnSaveCompleteDelegate OnSaveComplete;
+	
 	UPROPERTY(BlueprintAssignable, Category = "Saving and Loading")
 	FOnLoadCompleteDelegate OnLoadComplete;
+
+	UPROPERTY(BlueprintAssignable, Category = "Saving and Loading")
+	FOnSaveSlotsChanged OnSaveSlotsChanged;
+
+	UPROPERTY(BlueprintAssignable, Category = "Saving and Loading")
+	FOnSlotDeleted OnSlotDeleted;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Saving and Loading")
+	FString CurrentSaveSlotName = "Default";
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Saving and Loading")
+	bool LockSavingAndLoading = false;
+
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Saving and Loading")
+	int32 UserIndex;
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Saving and Loading")
+	int32 MaxSaveSlots = 50;
 
 
 public: //functions
@@ -52,40 +69,50 @@ public: //functions
 
 	//this is a function that will store a copy of every object that is going to want to save.
 	UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
-	void QueryAllSaveInterfaces();
+	bool QueryAllSaveInterfaces();
 
 	UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
-	void SaveGame(FString SlotName =  "Current");
+	bool SaveGame(FString SlotName =  "Current");
 
 	UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
-	void LoadGame(FString SlotName = "Current");
+	bool LoadGame(FString SlotName = "Current");
 
 	UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
-	void DeleteSlot(FString SlotName = "Current");
+	bool DeleteSlot(FString SlotName = "Current");
 
 	UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
-	void SetCurrentSaveSlot(FString Slot);
+	FORCEINLINE void SetCurrentSaveSlot(FString Slot) {CurrentSaveSlotName = Slot;}
+
 	UFUNCTION(BlueprintPure, Category = "Saving and Loading")
-	bool GetNewSaveName(FString & NewSaveName);
-	UFUNCTION(BlueprintPure, Category = "Saving and Loading")
-	TArray<FString> GetAllUniqueSaveNames();
+	bool GetNewUniqueSaveName(FString &NewSaveName);
 
 
 	UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
 	TArray<uint8> MakeSaveThumbnail();
 
 	UFUNCTION(BlueprintPure, Category = "Saving and Loading")
-	TArray<FSaveMetadata> GetAllSaveMetadata();
-	//UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
+	FORCEINLINE TArray<FSaveMetadata> GetAllSaveMetadata() {return SaveMetadataCache;}
+
+	UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
+	UTexture2D* MakeTextureFromPixelByteArray(const TArray<uint8>& BGRA8PixelData);
+
+		//UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
 	//UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
 	//UFUNCTION(BlueprintCallable, Category = "Saving and Loading")
 
 private: // functions
 	TArray<FSaveMetadata> GetAllSaveMetadataFromMap(const TMap<FString, FSaveMetadata>& InMetadata);
+	//helper function to always get a valid save game metadata file
+	USaveGameMetadata* GetSaveGameMetadata();
+	//UFUNCTION()
+	//void AfterFrameQuerySaveInterfaces() { QueryAllSaveInterfaces(); }
 };
 
+
+#pragma region Async Saving
+
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAsyncSavingTaskFinished);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAsyncSavedObject, FString, SavedObjectName);
 UCLASS()
 class CUSTOMSAVINGSUBSYSTEM_API UAsyncSavingTask : public UBlueprintAsyncActionBase
 {
@@ -94,9 +121,6 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnAsyncSavingTaskFinished SaveFinished;
-
-	UPROPERTY(BlueprintAssignable)
-	FOnAsyncSavedObject SavedObject;
 	
 	UFUNCTION(BlueprintCallable, meta = (BlueprintInternalUseOnly = "true", WorldContext = "WorldContextObject"), Category = "Saving and Loading")
 	static UAsyncSavingTask* AsyncSaveGame(const UObject* WorldContextObject, FString SlotName = "Current");
@@ -111,3 +135,31 @@ private:
 	bool Active;
 	/*...*/
 };
+
+#pragma endregion
+
+
+#pragma region Snapshot Capture
+
+UCLASS(BlueprintType)
+class CUSTOMSAVINGSUBSYSTEM_API ASnapCapture : public AActor
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere,Transient)
+	class USceneCaptureComponent2D* SceneCaptureComponent;
+public:
+	//initializer
+	ASnapCapture(const FObjectInitializer& ObjectInitializer);
+
+	//captures what the scene capture component is currently looking at
+	UFUNCTION(BlueprintCallable, meta = (Category = "Snapshot Capture", ToolTip = "Capture the current scene capture's view.\n\nResolution - a power of 2 resolution for the view capture, like 512"))
+    bool CaptureViewSnapshot(TArray<FColor>& ColorData, int32 Resolution = 512);
+
+	UFUNCTION(BlueprintCallable, meta = (Category = "Snapshot Capture"))
+	bool SetCaptureToPlayerCameraPosition();
+
+	static const UTexture2D* RawPixelColorDataToTexture(TArray<FColor> RawPixels, int32 Resolution = 512);
+};
+
+#pragma endregion
