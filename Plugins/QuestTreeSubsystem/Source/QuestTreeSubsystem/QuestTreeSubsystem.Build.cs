@@ -27,6 +27,8 @@ public class QuestTreeSubsystem : ModuleRules
 			{
 				"Core",
                 "CustomSavingSubsystem",
+                "EnhancedInput",
+                "MovieScene",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -39,7 +41,11 @@ public class QuestTreeSubsystem : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"GameplayTags",
+                "LevelSequence",
                 "CustomSavingSubsystem",
+                "MovieScene",
+                "EnhancedInput",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

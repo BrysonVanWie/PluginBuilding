@@ -2,8 +2,8 @@
 	"FileVersion": 3,
 	"Version": 1,
 	"VersionName": "1.0",
-	"FriendlyName": "QuestTreeSubsystem",
-	"Description": "This is a subsystem allowing me to control quests using the state tree component, this allows saving and loading as well as easy access to cutscenes and \"Invisible objectives\"",
+	"FriendlyName": "CanyonHouseNarrativeBuilder",
+	"Description": "This is a subsystem allowing me to control quests using the state tree component, this allows saving and loading as well as easy access to cutscenes and \"Invisible objectives\", DIALOGUE ALSO",
 	"Category": "Other",
 	"CreatedBy": "Bryson Van Wie",
 	"CreatedByURL": "",
@@ -32,6 +32,10 @@
 		},
 		{
 			"Name": "StateTree",
+			"Enabled": true
+		},
+		{
+			"Name": "EnhancedInput",
 			"Enabled": true
 		}
 	]
